@@ -63,6 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   static const _prefsKey = 'saved_links';
 
   final TextEditingController _urlController = TextEditingController();
+  final TextEditingController _keywordsController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   String? _shortLink;
   String? _errorText;
@@ -79,6 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     _urlController.dispose();
+    _keywordsController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -101,8 +103,9 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
 
-    final token = _generateToken(validated);
-    final shortLink = 'https://tamin.to/$token';
+    final keywordsText = _keywordsController.text.trim();
+    final token = _generateToken(validated, keywordsText);
+    final shortLink = _buildShortLink(token, keywordsText);
 
     final newLink = LinkItem(
       originalUrl: validated.toString(),
@@ -129,8 +132,9 @@ class _MyHomePageState extends State<MyHomePage> {
     return uri;
   }
 
-  String _generateToken(Uri uri) {
-    final normalized = uri.toString();
+  String _generateToken(Uri uri, String keywords) {
+    final normalized =
+        keywords.isEmpty ? uri.toString() : '${uri.toString()}|$keywords';
     final hash = normalized.codeUnits
         .fold<int>(0, (acc, code) => (acc * 31 + code) & 0x7fffffff);
     const chars =
@@ -148,6 +152,26 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
     return buffer.toString();
+  }
+
+  String _buildShortLink(String token, String keywords) {
+    if (keywords.isEmpty) {
+      return 'https://tamin.to/$token';
+    }
+
+    final sanitizedKeywords = keywords
+        .split(RegExp(r'[\s,]+'))
+        .map((keyword) =>
+            keyword.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9_-]'), ''))
+        .where((keyword) => keyword.isNotEmpty)
+        .toList();
+
+    if (sanitizedKeywords.isEmpty) {
+      return 'https://tamin.to/$token';
+    }
+
+    final joinedKeywords = sanitizedKeywords.join('-');
+    return 'https://tamin.to/$joinedKeywords-$token';
   }
 
   Future<void> _copyToClipboard() async {
@@ -264,50 +288,51 @@ class _MyHomePageState extends State<MyHomePage> {
                                 style: TextStyle(fontSize: 18),
                               ),
                               const SizedBox(height: 10),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _urlController,
-                                      keyboardType: TextInputType.url,
-                                      textInputAction: TextInputAction.done,
-                                      decoration: InputDecoration(
-                                        // labelText: 'Long URL',
-                                        hintText:
-                                            'https://example.com/your/very/long/path',
-                                        errorText: _errorText,
-                                        border: const OutlineInputBorder(),
-                                      ),
-                                      onSubmitted: (_) => _submit(),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  ElevatedButton(
-                                    onPressed: _submit,
-                                    style: ButtonStyle(
-                                      backgroundColor:
-                                          WidgetStateProperty.all(Colors.red[400]),
-                                    ),
-                                    child: const Padding(
-                                      padding:
-                                          EdgeInsets.symmetric(vertical: 14),
-                                      child: Text(
-                                        'Compress',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              TextField(
+                                controller: _urlController,
+                                keyboardType: TextInputType.url,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  hintText:
+                                      'https://example.com/your/very/long/path',
+                                  errorText: _errorText,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                onSubmitted: (_) =>
+                                    FocusScope.of(context).nextFocus(),
                               ),
                               const SizedBox(height: 16),
-                              OutlinedButton(
-                                onPressed: _shortLink != null
-                                    ? _copyToClipboard
-                                    : null,
+                              const Text(
+                                'Custom Keywords',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              const SizedBox(height: 10),
+                              TextField(
+                                controller: _keywordsController,
+                                keyboardType: TextInputType.text,
+                                textInputAction: TextInputAction.done,
+                                decoration: const InputDecoration(
+                                  hintText:
+                                      'Enter keywords separated by spaces or commas',
+                                  border: OutlineInputBorder(),
+                                  helperText:
+                                      'Keywords are used to build the generated short URL',
+                                ),
+                                onSubmitted: (_) => _submit(),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _submit,
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      WidgetStateProperty.all(Colors.red[400]),
+                                ),
                                 child: const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: 14, horizontal: 4),
-                                  child: Text('Copy'),
+                                  padding: EdgeInsets.symmetric(vertical: 14),
+                                  child: Text(
+                                    'Compress',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 24),
@@ -316,18 +341,32 @@ class _MyHomePageState extends State<MyHomePage> {
                                   'Generated short link',
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 ),
-                                const SizedBox(height: 12),
-                                SelectableText(
-                                  _shortLink!,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    SelectableText(
+                                      _shortLink!,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    OutlinedButton(
+                                      onPressed: _copyToClipboard,
+                                      child: const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            vertical: 12, horizontal: 8),
+                                        child: Text('Copy'),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 8),
                                 Text(
                                   _copied
                                       ? 'Copied!'
