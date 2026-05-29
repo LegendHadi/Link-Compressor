@@ -83,6 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _isLoading = false;
   final List<LinkItem> _allLinks = [];
   String _searchQuery = '';
+  Timer? _expiryTimer;
 
   String _selectedExpireLabel = 'No expiry';
   Duration? _selectedExpireDuration;
@@ -99,10 +100,12 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _loadSavedLinks();
+    _startExpiryTimer();
   }
 
   @override
   void dispose() {
+    _expiryTimer?.cancel();
     _urlController.dispose();
     _keywordsController.dispose();
     _searchController.dispose();
@@ -215,6 +218,35 @@ class _MyHomePageState extends State<MyHomePage> {
 
   bool _shortLinkExists(String shortLink) {
     return _allLinks.any((link) => link.shortLink == shortLink);
+  }
+
+  void _startExpiryTimer() {
+    _expiryTimer?.cancel();
+    _expiryTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (!mounted) return;
+      setState(() {});
+    });
+  }
+
+  String _formatTimeLeft(DateTime expiresAt) {
+    final now = DateTime.now();
+    if (now.isAfter(expiresAt)) {
+      return 'Expired';
+    }
+
+    final duration = expiresAt.difference(now);
+    final days = duration.inDays;
+    final hours = duration.inHours % 24;
+    final minutes = duration.inMinutes % 60;
+    final seconds = duration.inSeconds % 60;
+    final parts = <String>[];
+
+    if (days > 0) parts.add('${days}d');
+    if (hours > 0) parts.add('${hours}h');
+    if (minutes > 0) parts.add('${minutes}m');
+    if (parts.isEmpty) parts.add('${seconds}s');
+
+    return 'Expires in ${parts.join(' ')}';
   }
 
   String _buildUniqueShortLink(String token, String keywords) {
@@ -667,10 +699,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                               color: Colors.grey,
                                             ),
                                       ),
-                                      if (link.expiresLabel != null) ...[
+                                      if (link.expiresAt != null) ...[
                                         const SizedBox(height: 2),
                                         Text(
-                                          'Expires: ${link.expiresLabel}',
+                                          _formatTimeLeft(link.expiresAt!),
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodySmall
