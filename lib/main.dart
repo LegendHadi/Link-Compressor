@@ -1,7 +1,9 @@
-﻿import 'dart:convert';
+﻿import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -78,6 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String? _shortLink;
   String? _errorText;
   bool _copied = false;
+  bool _isLoading = false;
   final List<LinkItem> _allLinks = [];
   String _searchQuery = '';
 
@@ -124,28 +127,37 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
 
-    final keywordsText = _keywordsController.text.trim();
-    final token = _generateToken(validated, keywordsText);
-    final shortLink = _buildUniqueShortLink(token, keywordsText);
-    final expiresAt = _selectedExpireDuration == null
-        ? null
-        : DateTime.now().add(_selectedExpireDuration!);
-
-    final newLink = LinkItem(
-      originalUrl: validated.toString(),
-      shortLink: shortLink,
-      createdAt: DateTime.now(),
-      expiresLabel:
-          _selectedExpireLabel == 'No expiry' ? null : _selectedExpireLabel,
-      expiresAt: expiresAt,
-    );
-
     setState(() {
-      _shortLink = shortLink;
-      _allLinks.insert(0, newLink);
+      _isLoading = true;
     });
 
-    _saveLinks();
+    Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted) return;
+
+      final keywordsText = _keywordsController.text.trim();
+      final token = _generateToken(validated, keywordsText);
+      final shortLink = _buildUniqueShortLink(token, keywordsText);
+      final expiresAt = _selectedExpireDuration == null
+          ? null
+          : DateTime.now().add(_selectedExpireDuration!);
+
+      final newLink = LinkItem(
+        originalUrl: validated.toString(),
+        shortLink: shortLink,
+        createdAt: DateTime.now(),
+        expiresLabel:
+            _selectedExpireLabel == 'No expiry' ? null : _selectedExpireLabel,
+        expiresAt: expiresAt,
+      );
+
+      setState(() {
+        _isLoading = false;
+        _shortLink = shortLink;
+        _allLinks.insert(0, newLink);
+      });
+
+      _saveLinks();
+    });
   }
 
   Uri? _validateUrl(String text) {
@@ -243,12 +255,30 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _deleteLink(int index) {
+    final removedLink = _allLinks[index];
+
     setState(() {
       _allLinks.removeAt(index);
     });
     _saveLinks();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Link deleted')),
+      SnackBar(
+        content: const Text('Link deleted'),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {
+            if (!mounted) return;
+            setState(() {
+              _allLinks.insert(index, removedLink);
+            });
+            _saveLinks();
+          },
+        ),
+      ),
     );
   }
 
@@ -441,17 +471,41 @@ class _MyHomePageState extends State<MyHomePage> {
                               ),
                               const SizedBox(height: 16),
                               ElevatedButton(
-                                onPressed: _submit,
+                                onPressed: _isLoading ? null : _submit,
                                 style: ButtonStyle(
                                   backgroundColor:
                                       WidgetStateProperty.all(Colors.red[400]),
                                 ),
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 14),
-                                  child: Text(
-                                    'Compress',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 14),
+                                  child: _isLoading
+                                      ? const Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            SizedBox(
+                                              height: 18,
+                                              width: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation(
+                                                        Colors.white),
+                                              ),
+                                            ),
+                                            SizedBox(width: 12),
+                                            Text(
+                                              'Compressing...',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ],
+                                        )
+                                      : const Text(
+                                          'Compress',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
                                 ),
                               ),
                               const SizedBox(height: 24),
@@ -485,6 +539,29 @@ class _MyHomePageState extends State<MyHomePage> {
                                       ),
                                     ),
                                   ],
+                                ),
+                                const SizedBox(height: 18),
+                                Center(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Colors.black12,
+                                          blurRadius: 8,
+                                          offset: Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.all(16),
+                                    child: QrImageView(
+                                      data: _shortLink!,
+                                      version: QrVersions.auto,
+                                      size: 180,
+                                      backgroundColor: Colors.white,
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
