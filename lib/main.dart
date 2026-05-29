@@ -28,11 +28,15 @@ class LinkItem {
   final String originalUrl;
   final String shortLink;
   final DateTime createdAt;
+  final String? expiresLabel;
+  final DateTime? expiresAt;
 
   LinkItem({
     required this.originalUrl,
     required this.shortLink,
     required this.createdAt,
+    this.expiresLabel,
+    this.expiresAt,
   });
 
   Map<String, dynamic> toJson() {
@@ -40,6 +44,8 @@ class LinkItem {
       'originalUrl': originalUrl,
       'shortLink': shortLink,
       'createdAt': createdAt.toIso8601String(),
+      'expiresLabel': expiresLabel,
+      'expiresAt': expiresAt?.toIso8601String(),
     };
   }
 
@@ -48,6 +54,10 @@ class LinkItem {
       originalUrl: json['originalUrl'] as String,
       shortLink: json['shortLink'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
+      expiresLabel: json['expiresLabel'] as String?,
+      expiresAt: json['expiresAt'] != null
+          ? DateTime.parse(json['expiresAt'] as String)
+          : null,
     );
   }
 }
@@ -70,6 +80,17 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _copied = false;
   final List<LinkItem> _allLinks = [];
   String _searchQuery = '';
+
+  String _selectedExpireLabel = 'No expiry';
+  Duration? _selectedExpireDuration;
+
+  static final List<Map<String, dynamic>> _expireOptions = [
+    {'label': '1 hour', 'duration': Duration(hours: 1)},
+    {'label': '1 day', 'duration': Duration(days: 1)},
+    {'label': '3 days', 'duration': Duration(days: 3)},
+    {'label': '1 week', 'duration': Duration(days: 7)},
+    {'label': '1 month', 'duration': Duration(days: 30)},
+  ];
 
   @override
   void initState() {
@@ -106,11 +127,17 @@ class _MyHomePageState extends State<MyHomePage> {
     final keywordsText = _keywordsController.text.trim();
     final token = _generateToken(validated, keywordsText);
     final shortLink = _buildShortLink(token, keywordsText);
+    final expiresAt = _selectedExpireDuration == null
+        ? null
+        : DateTime.now().add(_selectedExpireDuration!);
 
     final newLink = LinkItem(
       originalUrl: validated.toString(),
       shortLink: shortLink,
       createdAt: DateTime.now(),
+      expiresLabel:
+          _selectedExpireLabel == 'No expiry' ? null : _selectedExpireLabel,
+      expiresAt: expiresAt,
     );
 
     setState(() {
@@ -244,6 +271,54 @@ class _MyHomePageState extends State<MyHomePage> {
     await prefs.setString(_prefsKey, encoded);
   }
 
+  Future<void> _showExpireOptions(BuildContext context) async {
+    final button = context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final topRight = button.localToGlobal(button.size.topRight(Offset.zero),
+        ancestor: overlay);
+    final position = RelativeRect.fromLTRB(
+      topRight.dx,
+      topRight.dy,
+      overlay.size.width - topRight.dx,
+      overlay.size.height -
+          button.localToGlobal(Offset.zero, ancestor: overlay).dy,
+    );
+
+    final selected = await showMenu<String>(
+      context: context,
+      position: position,
+      items: [
+        ..._expireOptions.map((option) {
+          return PopupMenuItem<String>(
+            value: option['label'] as String,
+            child: Text(option['label'] as String),
+          );
+        }),
+        const PopupMenuItem<String>(
+          value: 'No expiry',
+          child: Text('No expiry'),
+        ),
+      ],
+    );
+
+    if (selected == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedExpireLabel = selected;
+      if (selected == 'No expiry') {
+        _selectedExpireDuration = null;
+      } else {
+        final option = _expireOptions.firstWhere(
+          (option) => option['label'] == selected,
+          orElse: () => _expireOptions[0],
+        );
+        _selectedExpireDuration = option['duration'] as Duration;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredLinks = _getFilteredLinks();
@@ -300,6 +375,34 @@ class _MyHomePageState extends State<MyHomePage> {
                                 ),
                                 onSubmitted: (_) =>
                                     FocusScope.of(context).nextFocus(),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Expire Date (optional)',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              const SizedBox(height: 10),
+                              Builder(
+                                builder: (buttonContext) {
+                                  return OutlinedButton(
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16, horizontal: 16),
+                                      alignment: Alignment.centerLeft,
+                                    ),
+                                    onPressed: () async {
+                                      await _showExpireOptions(buttonContext);
+                                    },
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(_selectedExpireLabel),
+                                        const Icon(Icons.arrow_drop_down),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
                               const SizedBox(height: 16),
                               const Text(
@@ -367,6 +470,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _selectedExpireLabel == 'No expiry'
+                                      ? 'No expiration configured.'
+                                      : 'Expires in $_selectedExpireLabel.',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                const SizedBox(height: 6),
                                 Text(
                                   _copied
                                       ? 'Copied!'
@@ -452,7 +563,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                             .textTheme
                                             .bodySmall,
                                         maxLines: 2,
-                                        // overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
@@ -464,6 +574,18 @@ class _MyHomePageState extends State<MyHomePage> {
                                               color: Colors.grey,
                                             ),
                                       ),
+                                      if (link.expiresLabel != null) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Expires: ${link.expiresLabel}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: Colors.grey[700],
+                                              ),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                   trailing: PopupMenuButton(
