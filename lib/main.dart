@@ -126,7 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final keywordsText = _keywordsController.text.trim();
     final token = _generateToken(validated, keywordsText);
-    final shortLink = _buildShortLink(token, keywordsText);
+    final shortLink = _buildUniqueShortLink(token, keywordsText);
     final expiresAt = _selectedExpireDuration == null
         ? null
         : DateTime.now().add(_selectedExpireDuration!);
@@ -199,6 +199,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final joinedKeywords = sanitizedKeywords.join('-');
     return 'https://tamin.to/$joinedKeywords-$token';
+  }
+
+  bool _shortLinkExists(String shortLink) {
+    return _allLinks.any((link) => link.shortLink == shortLink);
+  }
+
+  String _buildUniqueShortLink(String token, String keywords) {
+    var candidate = _buildShortLink(token, keywords);
+    var attempt = 1;
+
+    while (_shortLinkExists(candidate)) {
+      candidate = '${_buildShortLink(token, keywords)}-$attempt';
+      attempt++;
+    }
+
+    return candidate;
   }
 
   Future<void> _copyToClipboard() async {
