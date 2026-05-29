@@ -1,6 +1,8 @@
-﻿import 'dart:math';
+﻿import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,6 +34,22 @@ class LinkItem {
     required this.shortLink,
     required this.createdAt,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'originalUrl': originalUrl,
+      'shortLink': shortLink,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  factory LinkItem.fromJson(Map<String, dynamic> json) {
+    return LinkItem(
+      originalUrl: json['originalUrl'] as String,
+      shortLink: json['shortLink'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
+  }
 }
 
 class MyHomePage extends StatefulWidget {
@@ -44,6 +62,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  static const _prefsKey = 'saved_links';
+
   final TextEditingController _urlController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   String? _shortLink;
@@ -51,6 +71,12 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _copied = false;
   final List<LinkItem> _allLinks = [];
   String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedLinks();
+  }
 
   @override
   void dispose() {
@@ -80,16 +106,18 @@ class _MyHomePageState extends State<MyHomePage> {
     final token = _generateToken(validated);
     final shortLink = 'https://tamin.to/$token';
 
+    final newLink = LinkItem(
+      originalUrl: validated.toString(),
+      shortLink: shortLink,
+      createdAt: DateTime.now(),
+    );
+
     setState(() {
       _shortLink = shortLink;
-      _allLinks.insert(
-          0,
-          LinkItem(
-            originalUrl: validated.toString(),
-            shortLink: shortLink,
-            createdAt: DateTime.now(),
-          ));
+      _allLinks.insert(0, newLink);
     });
+
+    _saveLinks();
   }
 
   Uri? _validateUrl(String text) {
@@ -153,6 +181,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _allLinks.removeAt(index);
     });
+    _saveLinks();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Link deleted')),
     );
@@ -165,6 +194,32 @@ class _MyHomePageState extends State<MyHomePage> {
         const SnackBar(content: Text('Link copied to clipboard')),
       );
     }
+  }
+
+  Future<void> _loadSavedLinks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedValue = prefs.getString(_prefsKey);
+    if (savedValue == null || savedValue.isEmpty) return;
+
+    try {
+      final decoded = jsonDecode(savedValue) as List<dynamic>;
+      final loadedLinks = decoded
+          .map((item) => LinkItem.fromJson(item as Map<String, dynamic>))
+          .toList();
+      setState(() {
+        _allLinks
+          ..clear()
+          ..addAll(loadedLinks);
+      });
+    } catch (_) {
+      // If stored data is invalid, ignore it and start fresh.
+    }
+  }
+
+  Future<void> _saveLinks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = jsonEncode(_allLinks.map((link) => link.toJson()).toList());
+    await prefs.setString(_prefsKey, encoded);
   }
 
   @override
