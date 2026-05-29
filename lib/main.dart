@@ -14,12 +14,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Link Compressor',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Link Compressor'),
+      debugShowCheckedModeBanner: false,
+      home: const MyHomePage(),
     );
   }
 }
@@ -53,9 +53,7 @@ class LinkItem {
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+  const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -228,63 +226,80 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        backgroundColor: Colors.lightBlue[200],
+        centerTitle: true,
+        title: const Text('Link Compressor'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 700),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Link Generator Card
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Shorten any long URL instantly',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Enter a long link below and press Shorten to generate a frontend mock short URL.',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 24),
-                          TextField(
-                            controller: _urlController,
-                            keyboardType: TextInputType.url,
-                            textInputAction: TextInputAction.done,
-                            decoration: InputDecoration(
-                              labelText: 'Long URL',
-                              hintText:
-                                  'https://example.com/your/very/long/path',
-                              errorText: _errorText,
-                              border: const OutlineInputBorder(),
-                            ),
-                            onSubmitted: (_) => _submit(),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
+            child: Column(
+              children: [
+                const Text(
+                  'In this free website, you can compress and customize any links to a shorter version.\nAlso you can set expire date for links',
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 700),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: _submit,
-                                  child: const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 14),
-                                    child: Text('Shorten'),
-                                  ),
-                                ),
+                              const Text(
+                                'Original URL',
+                                style: TextStyle(fontSize: 18),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _urlController,
+                                      keyboardType: TextInputType.url,
+                                      textInputAction: TextInputAction.done,
+                                      decoration: InputDecoration(
+                                        // labelText: 'Long URL',
+                                        hintText:
+                                            'https://example.com/your/very/long/path',
+                                        errorText: _errorText,
+                                        border: const OutlineInputBorder(),
+                                      ),
+                                      onSubmitted: (_) => _submit(),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  ElevatedButton(
+                                    onPressed: _submit,
+                                    style: ButtonStyle(
+                                      backgroundColor:
+                                          WidgetStateProperty.all(Colors.red[400]),
+                                    ),
+                                    child: const Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 14),
+                                      child: Text(
+                                        'Compress',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
                               OutlinedButton(
                                 onPressed: _shortLink != null
                                     ? _copyToClipboard
@@ -295,182 +310,185 @@ class _MyHomePageState extends State<MyHomePage> {
                                   child: Text('Copy'),
                                 ),
                               ),
+                              const SizedBox(height: 24),
+                              if (_shortLink != null) ...[
+                                Text(
+                                  'Generated short link',
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                                const SizedBox(height: 12),
+                                SelectableText(
+                                  _shortLink!,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _copied
+                                      ? 'Copied!'
+                                      : 'Tap copy to save the link.',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ] else ...[
+                                Text(
+                                  'Your short link will appear here when a valid URL is submitted.',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
                             ],
                           ),
-                          const SizedBox(height: 24),
-                          if (_shortLink != null) ...[
-                            Text(
-                              'Generated short link',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            const SizedBox(height: 12),
-                            SelectableText(
-                              _shortLink!,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _copied
-                                  ? 'Copied!'
-                                  : 'Tap copy to save the link.',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ] else ...[
-                            Text(
-                              'Your short link will appear here when a valid URL is submitted.',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  // Link History Section
-                  if (_allLinks.isNotEmpty) ...[
-                    Text(
-                      'Link History (${_allLinks.length})',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 16),
-                    // Search Field
-                    TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        labelText: 'Search links',
-                        hintText: 'Search by URL or short link',
-                        prefixIcon: const Icon(Icons.search),
-                        border: const OutlineInputBorder(),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {
-                                    _searchQuery = '';
-                                  });
-                                },
-                              )
-                            : null,
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    // Links List
-                    if (filteredLinks.isNotEmpty)
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: filteredLinks.length,
-                        itemBuilder: (context, index) {
-                          final link = filteredLinks[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              title: SelectableText(
-                                link.shortLink,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 8),
-                                  SelectableText(
-                                    link.originalUrl,
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                    maxLines: 2,
-                                    // overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Created: ${link.createdAt.toString().split('.')[0]}',
+                      const SizedBox(height: 32),
+                      // Link History Section
+                      if (_allLinks.isNotEmpty) ...[
+                        Text(
+                          'Link History (${_allLinks.length})',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 16),
+                        // Search Field
+                        TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            labelText: 'Search links',
+                            hintText: 'Search by URL or short link',
+                            prefixIcon: const Icon(Icons.search),
+                            border: const OutlineInputBorder(),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() {
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                : null,
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        // Links List
+                        if (filteredLinks.isNotEmpty)
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: filteredLinks.length,
+                            itemBuilder: (context, index) {
+                              final link = filteredLinks[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                child: ListTile(
+                                  title: SelectableText(
+                                    link.shortLink,
                                     style: Theme.of(context)
                                         .textTheme
-                                        .bodySmall
+                                        .titleSmall
                                         ?.copyWith(
-                                          color: Colors.grey,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                   ),
-                                ],
-                              ),
-                              trailing: PopupMenuButton(
-                                itemBuilder: (context) => [
-                                  PopupMenuItem(
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.copy, size: 18),
-                                        SizedBox(width: 12),
-                                        Text('Copy'),
-                                      ],
-                                    ),
-                                    onTap: () =>
-                                        _copyLinkToClipboard(link.shortLink),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 8),
+                                      SelectableText(
+                                        link.originalUrl,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                        maxLines: 2,
+                                        // overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Created: ${link.createdAt.toString().split('.')[0]}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Colors.grey,
+                                            ),
+                                      ),
+                                    ],
                                   ),
-                                  PopupMenuItem(
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.delete,
-                                            size: 18, color: Colors.red),
-                                        SizedBox(width: 12),
-                                        Text('Delete',
-                                            style:
-                                                TextStyle(color: Colors.red)),
-                                      ],
-                                    ),
-                                    onTap: () {
-                                      final actualIndex =
-                                          _allLinks.indexOf(link);
-                                      _deleteLink(actualIndex);
-                                    },
+                                  trailing: PopupMenuButton(
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        child: const Row(
+                                          children: [
+                                            Icon(Icons.copy, size: 18),
+                                            SizedBox(width: 12),
+                                            Text('Copy'),
+                                          ],
+                                        ),
+                                        onTap: () => _copyLinkToClipboard(
+                                            link.shortLink),
+                                      ),
+                                      PopupMenuItem(
+                                        child: const Row(
+                                          children: [
+                                            Icon(Icons.delete,
+                                                size: 18, color: Colors.red),
+                                            SizedBox(width: 12),
+                                            Text('Delete',
+                                                style: TextStyle(
+                                                    color: Colors.red)),
+                                          ],
+                                        ),
+                                        onTap: () {
+                                          final actualIndex =
+                                              _allLinks.indexOf(link);
+                                          _deleteLink(actualIndex);
+                                        },
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
+                              );
+                            },
+                          )
+                        else
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              child: Text(
+                                'No links match your search',
+                                style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ),
-                          );
-                        },
-                      )
-                    else
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          child: Text(
-                            'No links match your search',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                      ] else ...[
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Text(
+                              'No links created yet. Create one above to get started!',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
-                      ),
-                  ] else ...[
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 32),
-                        child: Text(
-                          'No links created yet. Create one above to get started!',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
