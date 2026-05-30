@@ -117,7 +117,7 @@ class LinkStore extends ChangeNotifier {
   }
 
   String _buildShortLink(String token, String keywords) {
-    if (keywords.isEmpty) return 'https://tamin.to/$token';
+    if (keywords.isEmpty) return 'https://short.tool/$token';
 
     final sanitizedKeywords = keywords
         .split(RegExp(r'[\s,]+'))
@@ -126,7 +126,7 @@ class LinkStore extends ChangeNotifier {
         .where((keyword) => keyword.isNotEmpty)
         .toList();
 
-    if (sanitizedKeywords.isEmpty) return 'https://tamin.to/$token';
+    if (sanitizedKeywords.isEmpty) return 'https://short.tool/$token';
 
     final joinedKeywords = sanitizedKeywords.join('-');
     return 'https://tamin.to/$joinedKeywords-$token';
