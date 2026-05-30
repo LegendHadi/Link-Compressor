@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:link_compressor/stores/expiry_notifier.dart';
 import 'package:link_compressor/stores/link_store.dart';
 import 'package:link_compressor/models/link_item.dart';
 
@@ -23,7 +24,8 @@ class _LinkHistoryState extends State<LinkHistory> {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<LinkStore>();
-    final filteredLinks = store.filteredLinks();
+    context.watch<ExpiryNotifier>();
+    final filteredLinks = store.filteredLinks;
 
     if (store.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -63,7 +65,8 @@ class _LinkHistoryState extends State<LinkHistory> {
               itemCount: filteredLinks.length,
               itemBuilder: (context, index) {
                 final link = filteredLinks[index];
-                final actualIndex = store.links.indexOf(link);
+                final actualIndex = store.links
+                    .indexWhere((l) => l.shortLink == link.shortLink);
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(

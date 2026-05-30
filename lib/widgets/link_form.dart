@@ -30,7 +30,7 @@ class _LinkFormState extends State<LinkForm> {
 
   @override
   Widget build(BuildContext context) {
-    final store = context.watch<LinkStore>();
+    final store = context.read<LinkStore>();
 
     return Card(
       elevation: 4,

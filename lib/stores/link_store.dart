@@ -1,5 +1,4 @@
-﻿import 'dart:async';
-import 'dart:math';
+﻿import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
@@ -20,8 +19,6 @@ class LinkStore extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  Timer? _expiryTimer;
-
   static final List<Map<String, dynamic>> expireOptions = [
     {'label': '1 hour', 'duration': const Duration(hours: 1)},
     {'label': '1 day', 'duration': const Duration(days: 1)},
@@ -38,7 +35,6 @@ class LinkStore extends ChangeNotifier {
       ..clear()
       ..addAll(loaded);
     _isLoading = false;
-    _startExpiryTimer();
     notifyListeners();
   }
 
@@ -85,8 +81,8 @@ class LinkStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<LinkItem> filteredLinks() {
-    if (_searchQuery.isEmpty) return _links;
+  List<LinkItem> get filteredLinks {
+    if (_searchQuery.isEmpty) return List.unmodifiable(_links);
     final q = _searchQuery.toLowerCase();
     return _links.where((link) {
       return link.originalUrl.toLowerCase().contains(q) ||
@@ -97,13 +93,6 @@ class LinkStore extends ChangeNotifier {
   void setSearchQuery(String q) {
     _searchQuery = q;
     notifyListeners();
-  }
-
-  void _startExpiryTimer() {
-    _expiryTimer?.cancel();
-    _expiryTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      notifyListeners();
-    });
   }
 
   String _generateToken(String url, String keywords) {
@@ -173,11 +162,5 @@ class LinkStore extends ChangeNotifier {
     if (minutes > 0) parts.add('${minutes}m');
     if (parts.isEmpty) parts.add('${seconds}s');
     return 'Expires in ${parts.join(' ')}';
-  }
-
-  @override
-  void dispose() {
-    _expiryTimer?.cancel();
-    super.dispose();
   }
 }

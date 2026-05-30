@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:link_compressor/stores/expiry_notifier.dart';
 import 'package:link_compressor/stores/link_store.dart';
 import 'package:link_compressor/widgets/link_form.dart';
 import 'package:link_compressor/widgets/link_history.dart';
@@ -7,8 +8,11 @@ import 'package:link_compressor/widgets/link_history.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => LinkStore()..load(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LinkStore()..load()),
+        ChangeNotifierProvider(create: (_) => ExpiryNotifier()),
+      ],
       child: const MyApp(),
     ),
   );
