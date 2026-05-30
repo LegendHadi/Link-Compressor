@@ -54,8 +54,7 @@ class _LinkFormState extends State<LinkForm> {
               onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             ),
             const SizedBox(height: 16),
-            const Text('Expire Date (optional)',
-                style: TextStyle(fontSize: 18)),
+            const Text('Expire Date', style: TextStyle(fontSize: 18)),
             const SizedBox(height: 10),
             Builder(
               builder: (buttonContext) {
@@ -231,6 +230,10 @@ class _LinkFormState extends State<LinkForm> {
     setState(() {
       _isSubmitting = false;
       _shortLink = newLink.shortLink;
+      _urlController.clear();
+      _keywordsController.clear();
+      _selectedExpireLabel = 'No expiry';
+      _selectedExpireDuration = null;
     });
   }
 

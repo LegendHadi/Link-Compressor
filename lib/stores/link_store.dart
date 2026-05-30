@@ -46,17 +46,17 @@ class LinkStore extends ChangeNotifier {
   }) async {
     final token = _generateToken(originalUrl, keywords);
     final short = _buildUniqueShortLink(token, keywords);
-    final expiresAt = selectedExpireDuration == null
+    final remainingTime = selectedExpireDuration == null
         ? null
         : DateTime.now().add(selectedExpireDuration);
 
     final link = LinkItem(
       originalUrl: originalUrl,
       shortLink: short,
-      createdAt: DateTime.now(),
+      createdTime: DateTime.now(),
       expiresLabel:
           selectedExpireLabel == 'No expiry' ? null : selectedExpireLabel,
-      expiresAt: expiresAt,
+      remainingTime: remainingTime,
     );
 
     _links.insert(0, link);

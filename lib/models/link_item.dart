@@ -3,25 +3,25 @@ import 'dart:convert';
 class LinkItem {
   final String originalUrl;
   final String shortLink;
-  final DateTime createdAt;
+  final DateTime createdTime;
   final String? expiresLabel;
-  final DateTime? expiresAt;
+  final DateTime? remainingTime;
 
   LinkItem({
     required this.originalUrl,
     required this.shortLink,
-    required this.createdAt,
+    required this.createdTime,
     this.expiresLabel,
-    this.expiresAt,
+    this.remainingTime,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'originalUrl': originalUrl,
       'shortLink': shortLink,
-      'createdAt': createdAt.toIso8601String(),
+      'createdTime': createdTime.toIso8601String(),
       'expiresLabel': expiresLabel,
-      'expiresAt': expiresAt?.toIso8601String(),
+      'remainingTime': remainingTime?.toIso8601String(),
     };
   }
 
@@ -29,10 +29,10 @@ class LinkItem {
     return LinkItem(
       originalUrl: json['originalUrl'] as String,
       shortLink: json['shortLink'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdTime: DateTime.parse(json['createdTime'] as String),
       expiresLabel: json['expiresLabel'] as String?,
-      expiresAt: json['expiresAt'] != null
-          ? DateTime.parse(json['expiresAt'] as String)
+      remainingTime: json['remainingTime'] != null
+          ? DateTime.parse(json['remainingTime'] as String)
           : null,
     );
   }

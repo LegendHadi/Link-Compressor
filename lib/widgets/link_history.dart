@@ -88,16 +88,16 @@ class _LinkHistoryState extends State<LinkHistory> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Created: ${link.createdAt.toString().split('.')[0]}',
+                          'Created: ${link.createdTime.toString().split('.')[0]}',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Colors.grey,
                                   ),
                         ),
-                        if (link.expiresAt != null) ...[
+                        if (link.remainingTime != null) ...[
                           const SizedBox(height: 2),
                           Text(
-                            store.formatTimeLeft(link.expiresAt!),
+                            store.formatTimeLeft(link.remainingTime!),
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Colors.grey[700],
