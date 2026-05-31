@@ -129,7 +129,7 @@ class LinkStore extends ChangeNotifier {
     if (sanitizedKeywords.isEmpty) return 'https://short.tool/$token';
 
     final joinedKeywords = sanitizedKeywords.join('-');
-    return 'https://tamin.to/$joinedKeywords-$token';
+    return 'https://short.tool/$joinedKeywords-$token';
   }
 
   bool _shortLinkExists(String shortLink) {
