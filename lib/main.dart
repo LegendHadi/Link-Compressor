@@ -44,7 +44,15 @@ class MyHomePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.lightBlue[200],
         centerTitle: true,
-        title: const Text('Link Compressor'),
+        title: Padding(
+          padding: const EdgeInsets.only(top: 20),
+          child: Image.asset(
+              'assets/images/appbar logo.png',
+              width: 500,
+              height: 250,
+              fit: BoxFit.contain,
+            ),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
