@@ -119,5 +119,4 @@ Right now, this app does not use a real API or backend service. Generated short 
 In future updates, backend support will be added so the shortened links can work as real shareable URLs with server-side storage and redirection.
 
 
-https://github.com/user-attachments/assets/62f5b734-5592-4cc7-bc20-f044eb8f9a5e
-
+https://github.com/user-attachments/assets/6277a3f2-fff2-4c2d-9bab-73be1e0781b1
