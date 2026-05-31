@@ -117,3 +117,7 @@ The app persists data using `lib/stores/link_store.dart` and local storage via `
 Right now, this app does not use a real API or backend service. Generated short links are created locally and do not actually resolve through a live link shortening backend.
 
 In future updates, backend support will be added so the shortened links can work as real shareable URLs with server-side storage and redirection.
+
+
+https://github.com/user-attachments/assets/62f5b734-5592-4cc7-bc20-f044eb8f9a5e
+
